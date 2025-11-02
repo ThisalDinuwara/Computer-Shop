@@ -3,28 +3,24 @@ package com.digitalworld.ecommerce.web.modal;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
-public class Category {
+public class Wishlist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private String name;
+    @OneToOne
+    private User user;
 
-
-    @Column(unique = true, nullable = false)
-    private String categoryId;
-
-    @ManyToOne
-    private Category parentCategory;
-
-    @Column(nullable = false)
-    private Integer level;
-
+    @ManyToMany
+    private Set<Product> products = new HashSet<>();
 }
