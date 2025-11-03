@@ -1,8 +1,11 @@
 package com.digitalworld.ecommerce.web.controller;
 
+import com.digitalworld.ecommerce.web.domain.USER_ROLE;
 import com.digitalworld.ecommerce.web.modal.User;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
+import com.digitalworld.ecommerce.web.response.AuthResponse;
 import com.digitalworld.ecommerce.web.response.SignupRequest;
+import com.digitalworld.ecommerce.web.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,16 +19,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final AuthService authService;
 
     @PostMapping("/signup")
     public ResponseEntity<User> createUserHandler(@RequestBody SignupRequest req){
 
-        User user = new User();
-        user.setEmail(req.getEmail());
-        user.setFullName(req.getFullName());
+        String jwt = authService.createUser(req);
 
-        User savedUser = userRepository.save(user);
+        AuthResponse res = new AuthResponse();
+        res.setJwt(jwt);
+        res.setMessage("register success!");
+        res.setRole(USER_ROLE.ROLE_CUSTOMER);
 
-        return ResponseEntity.ok(savedUser);
+        return ResponseEntity.ok(res);
     }
 }
