@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
         verificationCodeRepository.save(verificationCode);
 
         String subject = "digital world login/signup otp";
-        String text = "your login/signup otp is - ";
+        String text = "your login/signup otp is - " + otp;
 
         emailService.sendVerificationOtpEmail(email,otp,subject,text);
 
