@@ -1,7 +1,6 @@
 package com.digitalworld.ecommerce.web.controller;
 
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
-import com.digitalworld.ecommerce.web.modal.User;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
 import com.digitalworld.ecommerce.web.response.AuthResponse;
 import com.digitalworld.ecommerce.web.response.SignupRequest;
@@ -22,7 +21,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<User> createUserHandler(@RequestBody SignupRequest req){
+    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody SignupRequest req) throws Exception {
 
         String jwt = authService.createUser(req);
 

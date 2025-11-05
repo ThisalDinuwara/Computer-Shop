@@ -4,10 +4,14 @@ import com.digitalworld.ecommerce.web.config.JwtProvider;
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
 import com.digitalworld.ecommerce.web.modal.Cart;
 import com.digitalworld.ecommerce.web.modal.User;
+import com.digitalworld.ecommerce.web.modal.VerificationCode;
 import com.digitalworld.ecommerce.web.repository.CartRepository;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
+import com.digitalworld.ecommerce.web.repository.VerificationCodeRepository;
 import com.digitalworld.ecommerce.web.response.SignupRequest;
 import com.digitalworld.ecommerce.web.service.AuthService;
+import com.digitalworld.ecommerce.web.service.EmailService;
+import com.digitalworld.ecommerce.web.utils.OtpUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,9 +32,49 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final CartRepository cartRepository;
     private final JwtProvider jwtProvider;
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final EmailService emailService;
 
     @Override
-    public String createUser(SignupRequest req) {
+    public void sentLoginOtp(String email) throws Exception {
+        String SIGNING_PREFIX = "signin_";
+
+        if(email.startsWith(SIGNING_PREFIX)){
+            email = email.substring(SIGNING_PREFIX.length());
+
+            User user = userRepository.findByEmail(email);
+            if(user==null){
+                throw new Exception("user not exist with provided email");
+            }
+        }
+
+        VerificationCode isExist = verificationCodeRepository.findByEmail(email);
+        if(isExist!=null){
+            verificationCodeRepository.delete(isExist);
+        }
+
+        String otp = OtpUtil.generateOtp();
+
+        VerificationCode verificationCode = new VerificationCode();
+        verificationCode.setOtp(otp);
+        verificationCode.setEmail(email);
+        verificationCodeRepository.save(verificationCode);
+
+        String subject = "digital world login/signup otp";
+        String text = "your login/signup otp is - ";
+
+        emailService.sendVerificationOtpEmail(email,otp,subject,text);
+
+    }
+
+    @Override
+    public String createUser(SignupRequest req) throws Exception {
+
+        VerificationCode verificationCode = verificationCodeRepository.findByEmail(req.getEmail());
+
+        if(verificationCode==null && !verificationCode.getOtp().equals(req.getOtp())){
+            throw new Exception("wrong otp...");
+        }
 
         User user = userRepository.findByEmail(req.getEmail());
 
