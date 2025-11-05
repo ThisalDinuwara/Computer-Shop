@@ -3,6 +3,7 @@ package com.digitalworld.ecommerce.web.controller;
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
 import com.digitalworld.ecommerce.web.modal.VerificationCode;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
+import com.digitalworld.ecommerce.web.request.LoginRequest;
 import com.digitalworld.ecommerce.web.response.ApiResponse;
 import com.digitalworld.ecommerce.web.response.AuthResponse;
 import com.digitalworld.ecommerce.web.response.SignupRequest;
@@ -44,6 +45,16 @@ public class AuthController {
         ApiResponse res = new ApiResponse();
         res.setMessage("otp sent successfully!");
 
+
         return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/signing")
+    public ResponseEntity<AuthResponse> loginHandler(
+            @RequestBody LoginRequest req) throws Exception {
+
+        AuthResponse authResponse = authService.signing(req);
+
+        return ResponseEntity.ok(authResponse);
     }
 }

@@ -8,21 +8,26 @@ import com.digitalworld.ecommerce.web.modal.VerificationCode;
 import com.digitalworld.ecommerce.web.repository.CartRepository;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
 import com.digitalworld.ecommerce.web.repository.VerificationCodeRepository;
+import com.digitalworld.ecommerce.web.request.LoginRequest;
+import com.digitalworld.ecommerce.web.response.AuthResponse;
 import com.digitalworld.ecommerce.web.response.SignupRequest;
 import com.digitalworld.ecommerce.web.service.AuthService;
 import com.digitalworld.ecommerce.web.service.EmailService;
 import com.digitalworld.ecommerce.web.utils.OtpUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -34,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final VerificationCodeRepository verificationCodeRepository;
     private final EmailService emailService;
+    private final CustomUserServiceImpl customUserService;
 
     @Override
     public void sentLoginOtp(String email) throws Exception {
@@ -101,5 +107,42 @@ public class AuthServiceImpl implements AuthService {
 
 
         return jwtProvider.generateToken(authentication);
+    }
+
+    @Override
+    public AuthResponse signing(LoginRequest req) {
+        String username = req.getEmail();
+        String otp = req.getOtp();
+
+        Authentication authentication = authenticate(username,otp);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String token = jwtProvider.generateToken(authentication);
+
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setJwt(token);
+        authResponse.setMessage("Login Successfully!");
+
+        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        String roleName = authorities.isEmpty()?null:authorities.iterator().next().getAuthority();
+
+        authResponse.setRole(USER_ROLE.valueOf(roleName));
+        return authResponse;
+    }
+
+    private Authentication authenticate(String username, String otp) {
+        UserDetails userDetails = customUserService.loadUserByUsername(username);
+
+        if(userDetails==null){
+            throw new BadCredentialsException("invalid username");
+        }
+
+        VerificationCode verificationCode = verificationCodeRepository.findByEmail(username);
+
+        if(verificationCode==null || !verificationCode.getOtp().equals(otp)) {
+            throw new BadCredentialsException("wrong otp");
+        }
+        return new UsernamePasswordAuthenticationToken(userDetails,null,
+                userDetails.getAuthorities());
     }
 }
