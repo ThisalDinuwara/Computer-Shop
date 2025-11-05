@@ -3,7 +3,7 @@ package com.digitalworld.ecommerce.web.service.impl;
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
 import com.digitalworld.ecommerce.web.modal.Seller;
 import com.digitalworld.ecommerce.web.modal.User;
-import com.digitalworld.ecommerce.web.repository.SellerReository;
+import com.digitalworld.ecommerce.web.repository.SellerRepository;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import java.util.Objects;
 public class CustomUserServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
-    private final SellerReository sellerReository;
+    private final SellerRepository sellerReository;
     private static final String SELLER_PREFIX = "seller_";
 
     @Override

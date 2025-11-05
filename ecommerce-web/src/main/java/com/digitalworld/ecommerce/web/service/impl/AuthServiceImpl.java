@@ -3,9 +3,11 @@ package com.digitalworld.ecommerce.web.service.impl;
 import com.digitalworld.ecommerce.web.config.JwtProvider;
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
 import com.digitalworld.ecommerce.web.modal.Cart;
+import com.digitalworld.ecommerce.web.modal.Seller;
 import com.digitalworld.ecommerce.web.modal.User;
 import com.digitalworld.ecommerce.web.modal.VerificationCode;
 import com.digitalworld.ecommerce.web.repository.CartRepository;
+import com.digitalworld.ecommerce.web.repository.SellerRepository;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
 import com.digitalworld.ecommerce.web.repository.VerificationCodeRepository;
 import com.digitalworld.ecommerce.web.request.LoginRequest;
@@ -40,17 +42,29 @@ public class AuthServiceImpl implements AuthService {
     private final VerificationCodeRepository verificationCodeRepository;
     private final EmailService emailService;
     private final CustomUserServiceImpl customUserService;
+    private final SellerRepository sellerRepository;
 
     @Override
-    public void sentLoginOtp(String email) throws Exception {
-        String SIGNING_PREFIX = "signin_";
+    public void sentLoginOtp(String email,USER_ROLE role) throws Exception {
+        String SIGNING_PREFIX = "signing_";
 
         if(email.startsWith(SIGNING_PREFIX)){
             email = email.substring(SIGNING_PREFIX.length());
 
-            User user = userRepository.findByEmail(email);
-            if(user==null){
-                throw new Exception("user not exist with provided email");
+            if(role.equals(USER_ROLE.ROLE_SELLER)){
+                Seller seller = sellerRepository.findByEmail(email);
+                if(seller==null){
+                    throw new Exception("seller not found");
+                }
+            }
+            else {
+                System.out.println("email "+email);
+                User user = userRepository.findByEmail(email);
+                if(user==null){
+                    throw new Exception("user not exist with provided email");
+                }
+
+
             }
         }
 

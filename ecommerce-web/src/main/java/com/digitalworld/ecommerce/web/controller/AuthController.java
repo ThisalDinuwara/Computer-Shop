@@ -3,6 +3,7 @@ package com.digitalworld.ecommerce.web.controller;
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
 import com.digitalworld.ecommerce.web.modal.VerificationCode;
 import com.digitalworld.ecommerce.web.repository.UserRepository;
+import com.digitalworld.ecommerce.web.request.LoginOtpRequest;
 import com.digitalworld.ecommerce.web.request.LoginRequest;
 import com.digitalworld.ecommerce.web.response.ApiResponse;
 import com.digitalworld.ecommerce.web.response.AuthResponse;
@@ -38,9 +39,9 @@ public class AuthController {
 
     @PostMapping("/sent/login-signup-otp")
     public ResponseEntity<ApiResponse> sentOtpHandler(
-            @RequestBody VerificationCode req) throws Exception {
+            @RequestBody LoginOtpRequest req) throws Exception {
 
-        authService.sentLoginOtp(req.getEmail());
+        authService.sentLoginOtp(req.getEmail(),req.getRole());
 
         ApiResponse res = new ApiResponse();
         res.setMessage("otp sent successfully!");
