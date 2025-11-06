@@ -1,6 +1,7 @@
 package com.digitalworld.ecommerce.web.controller;
 
 import com.digitalworld.ecommerce.web.domain.AccountStatus;
+import com.digitalworld.ecommerce.web.exceptions.SellerException;
 import com.digitalworld.ecommerce.web.modal.Seller;
 import com.digitalworld.ecommerce.web.modal.SellerReport;
 import com.digitalworld.ecommerce.web.modal.VerificationCode;
@@ -86,7 +87,7 @@ public class SellerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Seller> getSellerById(@PathVariable Long id) throws Exception {
+    public ResponseEntity<Seller> getSellerById(@PathVariable Long id) throws SellerException {
         Seller seller = sellerService.getSellerById(id);
         return new ResponseEntity<>(seller, HttpStatus.OK);
     }

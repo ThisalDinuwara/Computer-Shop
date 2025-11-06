@@ -3,6 +3,7 @@ package com.digitalworld.ecommerce.web.service.impl;
 import com.digitalworld.ecommerce.web.config.JwtProvider;
 import com.digitalworld.ecommerce.web.domain.AccountStatus;
 import com.digitalworld.ecommerce.web.domain.USER_ROLE;
+import com.digitalworld.ecommerce.web.exceptions.SellerException;
 import com.digitalworld.ecommerce.web.modal.Address;
 import com.digitalworld.ecommerce.web.modal.Seller;
 import com.digitalworld.ecommerce.web.repository.AddressRepository;
@@ -52,9 +53,9 @@ public class SellerServiceImpl implements SellerService {
     }
 
     @Override
-    public Seller getSellerById(Long id) throws Exception {
+    public Seller getSellerById(Long id) throws SellerException {
         return sellerRepository.findById(id)
-                .orElseThrow(()-> new Exception("seller not found with id " + id));
+                .orElseThrow(()-> new SellerException("seller not found with id " + id));
     }
 
     @Override
