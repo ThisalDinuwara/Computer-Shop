@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode
+@Table(name = "categories")
 public class Category {
 
     @Id
@@ -17,11 +18,11 @@ public class Category {
 
     private String name;
 
-
-    @Column(unique = true, nullable = false)
+    @Column(name = "category_id", nullable = false, unique = true)  // ✅ Add constraints
     private String categoryId;
 
     @ManyToOne
+    @JoinColumn(name = "parent_category_id")  // ✅ Specify column name
     private Category parentCategory;
 
     @Column(nullable = false)

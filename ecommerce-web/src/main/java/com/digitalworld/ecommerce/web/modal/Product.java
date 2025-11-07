@@ -19,8 +19,9 @@ public class Product {
     private Long id;
 
     private String title;
+    private String description;
     private int mrpPrice;
-    private  int sellingPrice;
+    private int sellingPrice;
     private int discountPercent;
     private int quantity;
     private String color;
@@ -31,6 +32,7 @@ public class Product {
     private int numRatings;
 
     @ManyToOne
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @ManyToOne
@@ -38,13 +40,13 @@ public class Product {
 
     private LocalDateTime createdAt;
 
-    //@ElementCollection
-    private String Sizes;
+    private String sizes;
 
-    @OneToMany(mappedBy = "product",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
 
-    public void setDescription(Object description) {
+    // ✅ Add this field
+    @Column(nullable = false)
+    private boolean inStock = true;
 
-    }
 }

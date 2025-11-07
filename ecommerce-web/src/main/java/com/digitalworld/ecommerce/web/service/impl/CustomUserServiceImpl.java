@@ -24,7 +24,7 @@ import java.util.Objects;
 public class CustomUserServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
-    private final SellerRepository sellerReository;
+    private final SellerRepository sellerRepository;
     private static final String SELLER_PREFIX = "seller_";
 
     @Override
@@ -42,7 +42,7 @@ public class CustomUserServiceImpl implements UserDetailsService {
                 throw new UsernameNotFoundException("Seller username cannot be empty after prefix");
             }
 
-            Seller seller = sellerReository.findByEmail(actualUsername);
+            Seller seller = sellerRepository.findByEmail(actualUsername);
             if (seller == null) {
                 throw new UsernameNotFoundException("Seller not found with email: " + actualUsername);
             }

@@ -31,38 +31,71 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
     @Override
     public Product createProduct(CreateProductRequest req, Seller seller) {
 
-        Category category1 = categoryRepository.findByCategoryId(req.getCategory());
-
-        if(category1==null){
-            Category category = new Category();
-            category.setCategoryId(req.getCategory());
-            category.setLevel(1);
-            category1 = categoryRepository.save(category);
+        // ✅ IMPROVED: Added validation for required fields
+        if (req.getCategory() == null || req.getCategory().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category level 1 is required");
+        }
+        if (req.getCategory2() == null || req.getCategory2().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category level 2 is required");
+        }
+        if (req.getCategory3() == null || req.getCategory3().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category level 3 is required");
         }
 
+        // Level 1 Category
+        Category category1 = categoryRepository.findByCategoryId(req.getCategory());
+
+        if (category1 == null) {
+            Category category = new Category();
+            category.setCategoryId(req.getCategory());
+            category.setName(req.getCategory());  // ✅ ADDED: Set name field
+            category.setLevel(1);
+            category1 = categoryRepository.save(category);
+            System.out.println("Created new category level 1: " + category1.getCategoryId() + " with ID: " + category1.getId());
+        } else {
+            System.out.println("Found existing category level 1: " + category1.getCategoryId() + " with ID: " + category1.getId());
+        }
+
+        // Level 2 Category
         Category category2 = categoryRepository.findByCategoryId(req.getCategory2());
 
-        if(category2==null){
+        if (category2 == null) {
             Category category = new Category();
             category.setCategoryId(req.getCategory2());
+            category.setName(req.getCategory2());  // ✅ ADDED: Set name field
             category.setLevel(2);
             category.setParentCategory(category1);
             category2 = categoryRepository.save(category);
+            System.out.println("Created new category level 2: " + category2.getCategoryId() + " with ID: " + category2.getId());
+        } else {
+            System.out.println("Found existing category level 2: " + category2.getCategoryId() + " with ID: " + category2.getId());
         }
+
+        // Level 3 Category
         Category category3 = categoryRepository.findByCategoryId(req.getCategory3());
-        if(category3==null){
+
+        if (category3 == null) {
             Category category = new Category();
             category.setCategoryId(req.getCategory3());
+            category.setName(req.getCategory3());  // ✅ ADDED: Set name field
             category.setLevel(3);
             category.setParentCategory(category2);
             category3 = categoryRepository.save(category);
+            System.out.println("Created new category level 3: " + category3.getCategoryId() + " with ID: " + category3.getId());
+        } else {
+            System.out.println("Found existing category level 3: " + category3.getCategoryId() + " with ID: " + category3.getId());
+        }
+
+        // ✅ ADDED: Verify category3 has an ID before proceeding
+        if (category3.getId() == null) {
+            throw new IllegalStateException("Category was not saved properly - ID is null");
         }
 
         int discountPercentage = calculateDiscountPercentage(req.getMrpPrice(), req.getSellingPrice());
 
         Product product = new Product();
         product.setSeller(seller);
-        product.setCategory(category3);
+        product.setCategory(category3);  // ✅ This should now have a valid ID
         product.setDescription(req.getDescription());
         product.setCreatedAt(LocalDateTime.now());
         product.setTitle(req.getTitle());
@@ -72,17 +105,23 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
         product.setMrpPrice(req.getMrpPrice());
         product.setSizes(req.getSizes());
         product.setDiscountPercent(discountPercentage);
+        product.setQuantity(req.getQuantity() != null ? req.getQuantity() : 100);  // ✅ ADDED: Handle quantity
+        product.setInStock(true);  // ✅ ADDED: Set inStock flag
 
-        return productRepository.save(product);
+        System.out.println("Saving product with category ID: " + category3.getId());
+        Product savedProduct = productRepository.save(product);
+        System.out.println("Product saved successfully with ID: " + savedProduct.getId());
+
+        return savedProduct;
     }
 
     private int calculateDiscountPercentage(int mrpPrice, int sellingPrice) {
-        if(mrpPrice<=0){
-            throw  new IllegalArgumentException("Actual price must be greater than 0");
+        if (mrpPrice <= 0) {
+            throw new IllegalArgumentException("Actual price must be greater than 0");
         }
-        double discount = mrpPrice-sellingPrice;
-        double discountPercentage = (discount/mrpPrice)*100;
-        return (int)discountPercentage;
+        double discount = mrpPrice - sellingPrice;
+        double discountPercentage = (discount / mrpPrice) * 100;
+        return (int) discountPercentage;
     }
 
     @Override
@@ -101,8 +140,8 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
 
     @Override
     public Product findProductById(Long productId) throws ProductException {
-        return productRepository.findById(productId).orElseThrow(()->
-                new ProductException("product not found with id "+productId));
+        return productRepository.findById(productId).orElseThrow(() ->
+                new ProductException("product not found with id " + productId));
     }
 
     @Override
@@ -112,15 +151,15 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
 
     @Override
     public Page<Product> getAllProducts(String category, String brand, String colors, String sizes, Integer minPrice, Integer maxPrice, Integer minDiscount, String sort, String stock, Integer pageNumber) {
-        Specification<Product> spec = (root, query, criteriaBuilder)->{
+        Specification<Product> spec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if(category!=null){
+            if (category != null) {
                 Join<Product, Category> categoryJoin = root.join("category");
-                predicates.add(criteriaBuilder.equal(categoryJoin.get("categoryId"),category));
+                predicates.add(criteriaBuilder.equal(categoryJoin.get("categoryId"), category));
             }
             if (colors != null && !colors.isEmpty()) {
-                System.out.println("color "+colors);
+                System.out.println("color " + colors);
                 predicates.add(criteriaBuilder.equal(root.get("color"), colors));
             }
 
@@ -151,7 +190,7 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
         Pageable pageable;
-        if (sort!=null && !sort.isEmpty()){
+        if (sort != null && !sort.isEmpty()) {
             pageable = switch (sort) {
                 case "price_low" -> PageRequest.of(pageNumber != null ? pageNumber : 0, 10,
                         Sort.by("sellingPrice").ascending());
@@ -160,11 +199,10 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
                 default -> PageRequest.of(pageNumber != null ? pageNumber : 0, 10,
                         Sort.unsorted());
             };
+        } else {
+            pageable = PageRequest.of(pageNumber != null ? pageNumber : 0, 10, Sort.unsorted());
         }
-        else {
-            pageable = PageRequest.of(pageNumber!=null ? pageNumber:0,10, Sort.unsorted());
-        }
-        return productRepository.findAll(spec,pageable);
+        return productRepository.findAll(spec, pageable);
     }
 
     @Override
