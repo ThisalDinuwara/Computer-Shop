@@ -71,7 +71,7 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
         product.setImages(req.getImages());
         product.setMrpPrice(req.getMrpPrice());
         product.setSizes(req.getSizes());
-        product.setDiscountPercentage(discountPercentage);
+        product.setDiscountPercent(discountPercentage);
 
         return productRepository.save(product);
     }
@@ -106,8 +106,8 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
     }
 
     @Override
-    public List<Product> searchProducts() {
-        return List.of();
+    public List<Product> searchProducts(String query) {
+        return productRepository.searchProduct(query);
     }
 
     @Override
@@ -169,6 +169,6 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
 
     @Override
     public List<Product> getProductBySellerId(Long sellerId) {
-        return List.of();
+        return productRepository.findBySellerId(sellerId);
     }
 }
