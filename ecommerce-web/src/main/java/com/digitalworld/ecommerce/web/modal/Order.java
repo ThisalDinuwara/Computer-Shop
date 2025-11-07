@@ -1,5 +1,6 @@
 package com.digitalworld.ecommerce.web.modal;
 
+import com.digitalworld.ecommerce.web.domain.OrderStatus;
 import com.digitalworld.ecommerce.web.domain.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;

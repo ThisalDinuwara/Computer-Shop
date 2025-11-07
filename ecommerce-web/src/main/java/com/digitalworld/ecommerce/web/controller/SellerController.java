@@ -10,6 +10,7 @@ import com.digitalworld.ecommerce.web.request.LoginRequest;
 import com.digitalworld.ecommerce.web.response.AuthResponse;
 import com.digitalworld.ecommerce.web.service.AuthService;
 import com.digitalworld.ecommerce.web.service.EmailService;
+import com.digitalworld.ecommerce.web.service.SellerReportService;
 import com.digitalworld.ecommerce.web.service.SellerService;
 import com.digitalworld.ecommerce.web.utils.OtpUtil;
 import jakarta.mail.MessagingException;
@@ -28,6 +29,7 @@ public class SellerController {
     private final VerificationCodeRepository verificationCodeRepository;
     private final AuthService authService;
     private final EmailService emailService;
+    private final SellerReportService sellerReportService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> loginSeller(
@@ -97,6 +99,14 @@ public class SellerController {
             @RequestHeader("Authorization") String jwt) throws Exception {
         Seller seller = sellerService.getSellerProfile(jwt);
         return new ResponseEntity<>(seller, HttpStatus.OK);
+    }
+
+    @GetMapping("/report")
+    public ResponseEntity<SellerReport> getSellerReport(
+            @RequestHeader("Authorization") String jwt) throws Exception {
+        Seller seller = sellerService.getSellerProfile(jwt);
+        SellerReport report = sellerReportService.getSellerReport(seller);
+        return new ResponseEntity<>(report, HttpStatus.OK);
     }
 
     @GetMapping

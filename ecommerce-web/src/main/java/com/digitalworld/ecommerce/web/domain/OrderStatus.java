@@ -1,4 +1,4 @@
-package com.digitalworld.ecommerce.web.modal;
+package com.digitalworld.ecommerce.web.domain;
 
 public enum OrderStatus {
     PENDING,
