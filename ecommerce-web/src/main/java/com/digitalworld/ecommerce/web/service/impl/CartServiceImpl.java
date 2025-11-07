@@ -10,6 +10,8 @@ import com.digitalworld.ecommerce.web.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+
 @Service
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
@@ -32,6 +34,7 @@ public class CartServiceImpl implements CartService {
 
             int totalPrice = quantity* product.getSellingPrice();
             cartItem.setSellingPrice(totalPrice);
+            cartItem.setMrpPrice(quantity * product.getMrpPrice()); // Don't forget to set MRP price too!
 
             cart.getCartItems().add(cartItem);
             cartItem.setCart(cart);
@@ -45,6 +48,14 @@ public class CartServiceImpl implements CartService {
     public Cart findUserCart(User user) {
         Cart cart = cartRepository.findByUserId(user.getId());
 
+        // FIX 1: Add null check and create cart if it doesn't exist
+        if(cart == null) {
+            cart = new Cart();
+            cart.setUser(user);
+            cart.setCartItems(new HashSet<>()); // Initialize empty cart items
+            cart = cartRepository.save(cart);
+        }
+
         int totalPrice=0;
         int totalDiscountedPrice=0;
         int totalItem=0;
@@ -54,17 +65,19 @@ public class CartServiceImpl implements CartService {
             totalDiscountedPrice+=cartItem.getSellingPrice();
             totalItem+=cartItem.getQuantity();
         }
+        cart.setCouponPrice(0);
         cart.setTotalMrpPrice(totalPrice);
         cart.setTotalItem(totalItem);
         cart.setTotalSellingPrice(totalDiscountedPrice);
         cart.setDiscount(calculateDiscountPercentage(totalPrice,totalDiscountedPrice));
-        cart.setTotalItem(totalItem);
-        return null;
+
+        // FIX 2: Return the cart object, not null!
+        return cart;
     }
 
     private int calculateDiscountPercentage(int mrpPrice, int sellingPrice) {
         if (mrpPrice <= 0) {
-            throw new IllegalArgumentException("Actual price must be greater than 0");
+            return 0; // Return 0% discount if price is invalid, instead of throwing exception
         }
         double discount = mrpPrice - sellingPrice;
         double discountPercentage = (discount / mrpPrice) * 100;
