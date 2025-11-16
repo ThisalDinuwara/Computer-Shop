@@ -51,22 +51,24 @@ public class AuthServiceImpl implements AuthService {
     public void sentLoginOtp(String email, USER_ROLE role) throws Exception {
         String originalEmail = email;
 
+        // Set default role if null
+        if (role == null) {
+            role = USER_ROLE.ROLE_CUSTOMER;
+        }
+
         // Strip signing prefix if present
         if (email.startsWith(SIGNING_PREFIX)) {
             email = email.substring(SIGNING_PREFIX.length());
 
-            if (role.equals(USER_ROLE.ROLE_SELLER)) {
+            // Only check if seller exists for seller role
+            // For customers, allow both new and existing users
+            if (USER_ROLE.ROLE_SELLER.equals(role)) {
                 Seller seller = sellerRepository.findByEmail(email);
                 if (seller == null) {
                     throw new Exception("seller not found");
                 }
-            } else {
-                log.info("Sending OTP to user email: {}", email);
-                User user = userRepository.findByEmail(email);
-                if (user == null) {
-                    throw new Exception("user not exist with provided email");
-                }
             }
+            // Removed the user existence check to allow new user signups
         }
 
         // Delete existing verification code if present
@@ -95,7 +97,6 @@ public class AuthServiceImpl implements AuthService {
     public String createUser(SignupRequest req) throws Exception {
         VerificationCode verificationCode = verificationCodeRepository.findByEmail(req.getEmail());
 
-        // Fixed: Changed && to || (logical error fix)
         if (verificationCode == null || !verificationCode.getOtp().trim().equals(req.getOtp().trim())) {
             throw new Exception("wrong otp...");
         }
@@ -127,7 +128,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public AuthResponse signing(LoginRequest req) {
+    public AuthResponse signing(LoginRequest req) throws Exception {
         String username = req.getEmail();
         String otp = req.getOtp();
 
@@ -147,14 +148,14 @@ public class AuthServiceImpl implements AuthService {
         return authResponse;
     }
 
-    private Authentication authenticate(String username, String otp) {
+    private Authentication authenticate(String username, String otp) throws Exception {
         String originalUsername = username;
         boolean isSeller = false;
 
         // Strip signing prefix if present and detect if it's a seller
         if (username.startsWith(SIGNING_PREFIX)) {
             username = username.substring(SIGNING_PREFIX.length());
-            isSeller = true; // If has signing prefix, it's a seller login
+            isSeller = true;
         }
 
         log.info("Authentication attempt - Original: {}, Stripped: {}, IsSeller: {}",
@@ -181,7 +182,6 @@ public class AuthServiceImpl implements AuthService {
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         if (isSeller) {
-            // Load seller
             Seller seller = sellerRepository.findByEmail(username);
             if (seller == null) {
                 log.error("Seller not found: {}", username);
@@ -191,14 +191,30 @@ public class AuthServiceImpl implements AuthService {
             log.info("Seller found: {}", seller.getEmail());
             authorities.add(new SimpleGrantedAuthority(USER_ROLE.ROLE_SELLER.toString()));
 
-            // Create UserDetails for seller
             userDetails = new org.springframework.security.core.userdetails.User(
                     seller.getEmail(),
                     seller.getPassword() != null ? seller.getPassword() : "",
                     authorities
             );
         } else {
-            // Load regular user
+            // Check if user exists, if not create them (auto-signup on first login)
+            User user = userRepository.findByEmail(username);
+            if (user == null) {
+                log.info("Creating new user for: {}", username);
+                User newUser = new User();
+                newUser.setEmail(username);
+                newUser.setFullName(username.split("@")[0]); // Use email prefix as name
+                newUser.setRole(USER_ROLE.ROLE_CUSTOMER);
+                newUser.setMobile("0000000000");
+                newUser.setPassword(passwordEncoder.encode(otp));
+                user = userRepository.save(newUser);
+
+                // Create cart for new user
+                Cart cart = new Cart();
+                cart.setUser(user);
+                cartRepository.save(cart);
+            }
+
             userDetails = customUserService.loadUserByUsername(username);
             if (userDetails == null) {
                 log.error("User not found: {}", username);
