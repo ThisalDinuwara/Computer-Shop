@@ -4,6 +4,7 @@ import com.digitalworld.ecommerce.web.exceptions.ProductException;
 import com.digitalworld.ecommerce.web.modal.Category;
 import com.digitalworld.ecommerce.web.modal.Product;
 import com.digitalworld.ecommerce.web.modal.Seller;
+import com.digitalworld.ecommerce.web.repository.CartItemRepository;
 import com.digitalworld.ecommerce.web.repository.CategoryRepository;
 import com.digitalworld.ecommerce.web.repository.ProductRepository;
 import com.digitalworld.ecommerce.web.request.CreateProductRequest;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final CartItemRepository cartItemRepository; // ✅ ADDED
 
     @Override
     public Product createProduct(CreateProductRequest req, Seller seller) {
@@ -125,17 +128,86 @@ public class ProductServiceImpl implements com.digitalworld.ecommerce.web.servic
     }
 
     @Override
+    @Transactional
     public void deleteProduct(Long productId) throws ProductException {
         Product product = findProductById(productId);
+
+        // Delete related cart items first
+        cartItemRepository.deleteByProductId(productId);
+
+        // Then delete the product
         productRepository.delete(product);
     }
 
     @Override
-    public Product updateProduct(Long productId, Product product) throws ProductException {
-        findProductById(productId);
-        product.setId(productId);
+    public Product updateProduct(Long productId, CreateProductRequest req) throws ProductException {
+        Product existingProduct = findProductById(productId);
 
-        return productRepository.save(product);
+        // Handle categories same as createProduct
+        if (req.getCategory() != null && !req.getCategory().trim().isEmpty()) {
+            // Level 1 Category
+            Category category1 = categoryRepository.findByCategoryId(req.getCategory());
+            if (category1 == null) {
+                Category category = new Category();
+                category.setCategoryId(req.getCategory());
+                category.setName(req.getCategory());
+                category.setLevel(1);
+                category1 = categoryRepository.save(category);
+            }
+
+            // Level 2 Category
+            Category category2 = null;
+            if (req.getCategory2() != null && !req.getCategory2().trim().isEmpty()) {
+                category2 = categoryRepository.findByCategoryId(req.getCategory2());
+                if (category2 == null) {
+                    Category category = new Category();
+                    category.setCategoryId(req.getCategory2());
+                    category.setName(req.getCategory2());
+                    category.setLevel(2);
+                    category.setParentCategory(category1);
+                    category2 = categoryRepository.save(category);
+                }
+            }
+
+            // Level 3 Category
+            Category category3 = null;
+            if (req.getCategory3() != null && !req.getCategory3().trim().isEmpty() && category2 != null) {
+                category3 = categoryRepository.findByCategoryId(req.getCategory3());
+                if (category3 == null) {
+                    Category category = new Category();
+                    category.setCategoryId(req.getCategory3());
+                    category.setName(req.getCategory3());
+                    category.setLevel(3);
+                    category.setParentCategory(category2);
+                    category3 = categoryRepository.save(category);
+                }
+            }
+
+            // Set the deepest category available
+            if (category3 != null) {
+                existingProduct.setCategory(category3);
+            } else if (category2 != null) {
+                existingProduct.setCategory(category2);
+            } else {
+                existingProduct.setCategory(category1);
+            }
+        }
+
+        // Update other fields
+        if (req.getTitle() != null) existingProduct.setTitle(req.getTitle());
+        if (req.getDescription() != null) existingProduct.setDescription(req.getDescription());
+        if (req.getMrpPrice() > 0) existingProduct.setMrpPrice(req.getMrpPrice());
+        if (req.getSellingPrice() > 0) {
+            existingProduct.setSellingPrice(req.getSellingPrice());
+            int discountPercentage = calculateDiscountPercentage(req.getMrpPrice(), req.getSellingPrice());
+            existingProduct.setDiscountPercent(discountPercentage);
+        }
+        if (req.getColor() != null) existingProduct.setColor(req.getColor());
+        if (req.getImages() != null) existingProduct.setImages(req.getImages());
+        if (req.getSizes() != null) existingProduct.setSizes(req.getSizes());
+        if (req.getQuantity() != null && req.getQuantity() > 0) existingProduct.setQuantity(req.getQuantity());
+
+        return productRepository.save(existingProduct);
     }
 
     @Override
