@@ -55,7 +55,7 @@ const SellerProductsPage = () => {
   const filteredProducts = products.filter(
     (product) =>
       product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      product.category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) return <Loading />;
@@ -166,9 +166,9 @@ const SellerProductsPage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{product.category}</div>
-                        {product.category2 && (
-                          <div className="text-sm text-gray-500">{product.category2}</div>
+                        <div className="text-sm text-gray-900">{product.category?.name || 'N/A'}</div>
+                        {product.category?.parentCategory && (
+                          <div className="text-sm text-gray-500">{product.category.parentCategory.name}</div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

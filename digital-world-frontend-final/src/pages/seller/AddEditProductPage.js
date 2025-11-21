@@ -54,9 +54,9 @@ const AddEditProductPage = () => {
           sellingPrice: product.sellingPrice || '',
           color: product.color || '',
           images: product.images?.length > 0 ? product.images : [''],
-          category: product.category || '',
-          category2: product.category2 || '',
-          category3: product.category3 || '',
+          category: product.category?.name || '',
+          category2: product.category?.parentCategory?.name || '',
+          category3: product.category?.parentCategory?.parentCategory?.name || '',
           sizes: product.sizes || '',
           quantity: product.quantity || '',
         });
